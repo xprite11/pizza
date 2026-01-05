@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pizzería IL' MARCO 🍕</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blueprint-blue: #0A2463;
+            --grid-line: rgba(82, 128, 182, 0.4);
+            --kitty-pink: #ff85b2;
+        }
+
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--blueprint-blue);
+            touch-action: none;
+        }
+
+        /* Fondo de Plano */
+        #blueprint-canvas {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image:
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Cartel e Identificación */
+        #pizzeria-sign {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #FFC300; color: #333; padding: 10px 20px;
+            border-radius: 10px; font-family: 'Architects Daughter', cursive;
+            font-size: 1.5rem; font-weight: bold; border: 3px solid #333; z-index: 5;
+        }
+
+        /* Objetos en el plano */
+        .draggable-item {
+            position: absolute; cursor: grab; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .draggable-item img { width: 100%; height: 100%; pointer-events: none; }
+
+        /* PANEL DE OBJETOS CORREGIDO */
+        #object-panel {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: white; border-top: 5px solid var(--kitty-pink);
+            border-top-left-radius: 25px; border-top-right-radius: 25px;
+            z-index: 100; transition: transform 0.4s ease;
+            transform: translateY(calc(100% - 60px)); /* Cerrado por defecto */
+        }
+        #object-panel.open { transform: translateY(0); }
+
+        #panel-handle {
+            height: 60px; background: var(--kitty-pink); color: white;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; cursor: pointer; font-size: 1.1rem;
+        }
+
+        #panel-content {
+            padding: 20px; display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 15px; max-height: 350px; overflow-y: auto; background: white;
+        }
+
+        .object-category {
+            grid-column: 1 / -1; color: var(--kitty-pink);
+            font-weight: bold; border-bottom: 2px solid #eee;
+            margin-top: 10px; padding-bottom: 5px; text-align: left;
+        }
+
+        .object-thumb {
+            background: #f0f0f0; border-radius: 10px; padding: 10px;
+            display: flex; align-items: center; justify-content: center;
+            aspect-ratio: 1/1; cursor: pointer;
+        }
+        .object-thumb img { max-width: 100%; max-height: 100%; }
+
+        /* Botones laterales */
+        #controls { position: fixed; top: 100px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 5; }
+        .btn { 
+            background: white; border: 2px solid var(--kitty-pink); 
+            border-radius: 50%; width: 50px; height: 50px; font-size: 20px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="pizzeria-sign">IL' MARCO 🍕</div>
+
+    <div id="blueprint-canvas"></div>
+
+    <div id="controls">
+        <button class="btn" onclick="limpiar()">🗑️</button>
+        <button class="btn" onclick="alert('Mantené presionado un objeto para arrastrarlo. ¡Diseñá nuestro sueño!')">ℹ️</button>
+    </div>
+
+    <div id="object-panel" id="panel">
+        <div id="panel-handle" onclick="togglePanel()">🔽 ELEGIR OBJETOS 🔼</div>
+        <div id="panel-content">
+            <div class="object-category">Pisos y Paredes</div>
+            <div class="object-thumb" onclick="addObj('🧱', 100, 20)"><img src="https://cdn-icons-png.flaticon.com/512/1004/1004759.png" alt="Pared"></div>
+            <div class="object-thumb" onclick="addObj('🔲', 80, 80)"><img src="https://cdn-icons-png.flaticon.com/512/599/599665.png" alt="Piso"></div>
+            
+            <div class="object-category">Cocina</div>
+            <div class="object-thumb" onclick="addObj('🔥', 90, 90)"><img src="https://cdn-icons-png.flaticon.com/512/1113/1113204.png" alt="Horno"></div>
+            <div class="object-thumb" onclick="addObj('🔪', 100, 50)"><img src="https://cdn-icons-png.flaticon.com/512/2852/2852237.png" alt="Mesada"></div>
+            
+            <div class="object-category">Salón</div>
+            <div class="object-thumb" onclick="addObj('🪑', 50, 50)"><img src="https://cdn-icons-png.flaticon.com/512/2413/2413192.png" alt="Silla"></div>
+            <div class="object-thumb" onclick="addObj('🍽️', 80, 80)"><img src="https://cdn-icons-png.flaticon.com/512/2635/2635606.png" alt="Mesa"></div>
+            <div class="object-thumb" onclick="addObj('🛋️', 120, 60)"><img src="https://cdn-icons-png.flaticon.com/512/2603/2603737.png" alt="Sillón"></div>
+
+            <div class="object-category">Decoración</div>
+            <div class="object-thumb" onclick="addObj('🌿', 40, 40)"><img src="https://cdn-icons-png.flaticon.com/512/628/628283.png" alt="Planta"></div>
+            <div class="object-thumb" onclick="addObj('🍕', 40, 40)"><img src="https://cdn-icons-png.flaticon.com/512/3595/3595455.png" alt="Pizza"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('blueprint-canvas');
+        const panel = document.getElementById('object-panel');
+        let activeItem = null;
+
+        // Función para abrir/cerrar panel
+        function togglePanel() {
+            panel.classList.toggle('open');
+        }
+
+        // Función para agregar objeto al plano
+        function addObj(emoji, w, h) {
+            const item = document.createElement('div');
+            item.className = 'draggable-item';
+            item.style.width = w + 'px';
+            item.style.height = h + 'px';
+            item.style.left = '50px';
+            item.style.top = '150px';
+            
+            // Usamos imágenes reales de iconos para que se vea profesional
+            let imgSrc = "";
+            if(emoji === '🧱') imgSrc = "https://cdn-icons-png.flaticon.com/512/1004/1004759.png";
+            if(emoji === '🔲') imgSrc = "https://cdn-icons-png.flaticon.com/512/599/599665.png";
+            if(emoji === '🔥') imgSrc = "https://cdn-icons-png.flaticon.com/512/1113/1113204.png";
+            if(emoji === '🔪') imgSrc = "https://cdn-icons-png.flaticon.com/512/2852/2852237.png";
+            if(emoji === '🪑') imgSrc = "https://cdn-icons-png.flaticon.com/512/2413/2413192.png";
+            if(emoji === '🍽️') imgSrc = "https://cdn-icons-png.flaticon.com/512/2635/2635606.png";
+            if(emoji === '🛋️') imgSrc = "https://cdn-icons-png.flaticon.com/512/2603/2603737.png";
+            if(emoji === '🌿') imgSrc = "https://cdn-icons-png.flaticon.com/512/628/628283.png";
+            if(emoji === '🍕') imgSrc = "https://cdn-icons-png.flaticon.com/512/3595/3595455.png";
+
+            item.innerHTML = `<img src="${imgSrc}">`;
+            
+            canvas.appendChild(item);
+            makeDraggable(item);
+            togglePanel(); // Cierra el panel al elegir
+        }
+
+        function makeDraggable(el) {
+            let x = 0, y = 0;
+
+            el.addEventListener('touchstart', dragStart);
+            el.addEventListener('mousedown', dragStart);
+
+            function dragStart(e) {
+                activeItem = el;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                x = clientX - el.offsetLeft;
+                y = clientY - el.offsetTop;
+                
+                document.addEventListener('touchmove', dragMove, {passive: false});
+                document.addEventListener('mousemove', dragMove);
+                document.addEventListener('touchend', dragEnd);
+                document.addEventListener('mouseup', dragEnd);
+            }
+
+            function dragMove(e) {
+                if (!activeItem) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                // Efecto Imán (Snap a 20px)
+                let newX = Math.round((clientX - x) / 20) * 20;
+                let newY = Math.round((clientY - y) / 20) * 20;
+                
+                el.style.left = newX + 'px';
+                el.style.top = newY + 'px';
+            }
+
+            function dragEnd() {
+                activeItem = null;
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('mousemove', dragMove);
+            }
+            
+            // Borrar con doble click o doble toque
+            el.addEventListener('dblclick', () => el.remove());
+        }
+
+        function limpiar() {
+            if(confirm("¿Borrar todo el plano?")) canvas.innerHTML = "";
+        }
+    </script>
+</body>
+</html>
