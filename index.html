@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pizzería IL' MARCO 🍕</title>
+    <title>Arquitectos: IL' MARCO 🍕</title>
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --blueprint-blue: #0A2463;
-            --grid-line: rgba(82, 128, 182, 0.4);
+            --grid-line: rgba(255, 255, 255, 0.2);
             --kitty-pink: #ff85b2;
         }
 
@@ -19,146 +19,169 @@
             touch-action: none;
         }
 
-        /* Fondo de Plano */
+        /* Contenedor de Zoom */
+        #zoom-container {
+            width: 100vw; height: 100vh;
+            transform-origin: 0 0;
+            cursor: grab;
+        }
+
+        /* El Plano */
         #blueprint-canvas {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            width: 3000px; height: 3000px;
             background-image:
                 linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
                 linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-size: 40px 40px;
+            position: relative;
         }
 
-        /* Cartel e Identificación */
         #pizzeria-sign {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
             background: #FFC300; color: #333; padding: 10px 20px;
-            border-radius: 10px; font-family: 'Architects Daughter', cursive;
-            font-size: 1.5rem; font-weight: bold; border: 3px solid #333; z-index: 5;
+            border-radius: 5px; font-family: 'Architects Daughter', cursive;
+            font-size: 1.4rem; font-weight: bold; border: 2px solid #333; z-index: 1000;
+            box-shadow: 4px 4px 0px #000;
         }
 
-        /* Objetos en el plano */
         .draggable-item {
             position: absolute; cursor: grab; z-index: 10;
             display: flex; align-items: center; justify-content: center;
+            font-size: 50px; user-select: none;
         }
-        .draggable-item img { width: 100%; height: 100%; pointer-events: none; }
 
-        /* PANEL DE OBJETOS CORREGIDO */
+        /* PANEL MEJORADO */
         #object-panel {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; border-top: 5px solid var(--kitty-pink);
-            border-top-left-radius: 25px; border-top-right-radius: 25px;
-            z-index: 100; transition: transform 0.4s ease;
-            transform: translateY(calc(100% - 60px)); /* Cerrado por defecto */
+            background: white; border-top: 6px solid var(--kitty-pink);
+            border-top-left-radius: 30px; border-top-right-radius: 30px;
+            z-index: 2000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(calc(100% - 65px));
         }
         #object-panel.open { transform: translateY(0); }
 
         #panel-handle {
-            height: 60px; background: var(--kitty-pink); color: white;
+            height: 65px; background: var(--kitty-pink); color: white;
             display: flex; justify-content: center; align-items: center;
-            font-weight: bold; cursor: pointer; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; font-size: 1.2rem; gap: 10px;
         }
 
         #panel-content {
-            padding: 20px; display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 15px; max-height: 350px; overflow-y: auto; background: white;
+            padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px; max-height: 400px; overflow-y: auto;
         }
 
         .object-category {
-            grid-column: 1 / -1; color: var(--kitty-pink);
-            font-weight: bold; border-bottom: 2px solid #eee;
-            margin-top: 10px; padding-bottom: 5px; text-align: left;
+            grid-column: 1 / -1; color: #333; font-weight: bold;
+            border-bottom: 2px solid var(--kitty-pink);
+            margin-top: 15px; text-align: left; padding-bottom: 5px;
         }
 
-        .object-thumb {
-            background: #f0f0f0; border-radius: 10px; padding: 10px;
-            display: flex; align-items: center; justify-content: center;
-            aspect-ratio: 1/1; cursor: pointer;
+        .item-card {
+            background: #fdfdfd; border: 1px solid #ddd; border-radius: 12px;
+            padding: 10px; text-align: center; cursor: pointer;
+            transition: 0.2s;
         }
-        .object-thumb img { max-width: 100%; max-height: 100%; }
+        .item-card:active { transform: scale(0.9); }
+        .item-card span { font-size: 35px; display: block; }
+        .item-card label { font-size: 10px; color: #666; font-weight: bold; }
 
-        /* Botones laterales */
-        #controls { position: fixed; top: 100px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 5; }
-        .btn { 
+        /* Botones Flotantes */
+        #ui-layer { position: fixed; top: 80px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+        .ui-btn { 
             background: white; border: 2px solid var(--kitty-pink); 
-            border-radius: 50%; width: 50px; height: 50px; font-size: 20px;
+            border-radius: 12px; width: 45px; height: 45px; font-size: 20px;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 2px 2px 0px var(--kitty-pink);
         }
     </style>
 </head>
 <body>
 
-    <div id="pizzeria-sign">IL' MARCO 🍕</div>
+    <div id="pizzeria-sign">IL' MARCO - Plano Maestro 📐</div>
 
-    <div id="blueprint-canvas"></div>
-
-    <div id="controls">
-        <button class="btn" onclick="limpiar()">🗑️</button>
-        <button class="btn" onclick="alert('Mantené presionado un objeto para arrastrarlo. ¡Diseñá nuestro sueño!')">ℹ️</button>
+    <div id="ui-layer">
+        <button class="ui-btn" onclick="zoomIn()">➕</button>
+        <button class="ui-btn" onclick="zoomOut()">➖</button>
+        <button class="ui-btn" onclick="limpiar()">🗑️</button>
     </div>
 
-    <div id="object-panel" id="panel">
-        <div id="panel-handle" onclick="togglePanel()">🔽 ELEGIR OBJETOS 🔼</div>
-        <div id="panel-content">
-            <div class="object-category">Pisos y Paredes</div>
-            <div class="object-thumb" onclick="addObj('🧱', 100, 20)"><img src="https://cdn-icons-png.flaticon.com/512/1004/1004759.png" alt="Pared"></div>
-            <div class="object-thumb" onclick="addObj('🔲', 80, 80)"><img src="https://cdn-icons-png.flaticon.com/512/599/599665.png" alt="Piso"></div>
-            
-            <div class="object-category">Cocina</div>
-            <div class="object-thumb" onclick="addObj('🔥', 90, 90)"><img src="https://cdn-icons-png.flaticon.com/512/1113/1113204.png" alt="Horno"></div>
-            <div class="object-thumb" onclick="addObj('🔪', 100, 50)"><img src="https://cdn-icons-png.flaticon.com/512/2852/2852237.png" alt="Mesada"></div>
-            
-            <div class="object-category">Salón</div>
-            <div class="object-thumb" onclick="addObj('🪑', 50, 50)"><img src="https://cdn-icons-png.flaticon.com/512/2413/2413192.png" alt="Silla"></div>
-            <div class="object-thumb" onclick="addObj('🍽️', 80, 80)"><img src="https://cdn-icons-png.flaticon.com/512/2635/2635606.png" alt="Mesa"></div>
-            <div class="object-thumb" onclick="addObj('🛋️', 120, 60)"><img src="https://cdn-icons-png.flaticon.com/512/2603/2603737.png" alt="Sillón"></div>
+    <div id="zoom-container">
+        <div id="blueprint-canvas"></div>
+    </div>
 
-            <div class="object-category">Decoración</div>
-            <div class="object-thumb" onclick="addObj('🌿', 40, 40)"><img src="https://cdn-icons-png.flaticon.com/512/628/628283.png" alt="Planta"></div>
-            <div class="object-thumb" onclick="addObj('🍕', 40, 40)"><img src="https://cdn-icons-png.flaticon.com/512/3595/3595455.png" alt="Pizza"></div>
+    <div id="object-panel">
+        <div id="panel-handle" onclick="togglePanel()">📂 ELEMENTOS DE CONSTRUCCIÓN</div>
+        <div id="panel-content">
+            
+            <div class="object-category">Paredes y Ventanas</div>
+            <div class="item-card" onclick="addObj('🧱', 160, 20, 'Pared Larga')"><span>➖</span><label>Pared H</label></div>
+            <div class="item-card" onclick="addObj('🧱', 20, 160, 'Pared Alta')"><span>|</span><label>Pared V</label></div>
+            <div class="item-card" onclick="addObj('🚪', 80, 20, 'Puerta')"><span>🚪</span><label>Puerta</label></div>
+            <div class="item-card" onclick="addObj('🖼️', 60, 10, 'Ventana')"><span>🟦</span><label>Ventana</label></div>
+
+            <div class="object-category">Cocina (El Alma)</div>
+            <div class="item-card" onclick="addObj('🔥', 120, 120, 'Horno Barro')"><span>⭕</span><label>Horno Barro</label></div>
+            <div class="item-card" onclick="addObj('🍳', 80, 80, 'Horno Pizza')"><span>🔳</span><label>Horno Eléc.</label></div>
+            <div class="item-card" onclick="addObj('🔪', 120, 60, 'Mesada Masa')"><span>⬜</span><label>Mesada Masa</label></div>
+            <div class="item-card" onclick="addObj('🧊', 60, 80, 'Heladera')"><span>❄️</span><label>Heladera</label></div>
+            <div class="item-card" onclick="addObj('🚰', 40, 40, 'Bachas')"><span>💧</span><label>Bachas</label></div>
+
+            <div class="object-category">Salón y Muebles</div>
+            <div class="item-card" onclick="addObj('🪑', 40, 40, 'Silla')"><span>🪑</span><label>Silla</label></div>
+            <div class="item-card" onclick="addObj('🍽️', 80, 80, 'Mesa R')"><span>⚪</span><label>Mesa Red.</label></div>
+            <div class="item-card" onclick="addObj('🍽️', 100, 100, 'Mesa C')"><span>⬜</span><label>Mesa Cuad.</label></div>
+            <div class="item-card" onclick="addObj('🛋️', 140, 60, 'Box')"><span>➖</span><label>Sillón Box</label></div>
+            <div class="item-card" onclick="addObj('🍺', 160, 40, 'Barra')"><span>🪵</span><label>Barra</label></div>
+
+            <div class="object-category">Ambiente</div>
+            <div class="item-card" onclick="addObj('🌿', 40, 40, 'Planta')"><span>🌿</span><label>Planta</label></div>
+            <div class="item-card" onclick="addObj('📦', 40, 40, 'Cajas')"><span>📦</span><label>Cajas Pizza</label></div>
+            <div class="item-card" onclick="addObj('💡', 30, 30, 'Luz')"><span>🟡</span><label>Luz</label></div>
+
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('blueprint-canvas');
+        const zoomContainer = document.getElementById('zoom-container');
         const panel = document.getElementById('object-panel');
+        
+        let scale = 1;
         let activeItem = null;
 
-        // Función para abrir/cerrar panel
-        function togglePanel() {
-            panel.classList.toggle('open');
-        }
+        function togglePanel() { panel.classList.toggle('open'); }
 
-        // Función para agregar objeto al plano
-        function addObj(emoji, w, h) {
+        // Sistema de Zoom
+        function zoomIn() { scale += 0.1; applyZoom(); }
+        function zoomOut() { if(scale > 0.4) scale -= 0.1; applyZoom(); }
+        function applyZoom() { zoomContainer.style.transform = `scale(${scale})`; }
+
+        // Agregar objetos al plano
+        function addObj(type, w, h, label) {
             const item = document.createElement('div');
             item.className = 'draggable-item';
+            
+            // Estilos de dibujo técnico
             item.style.width = w + 'px';
             item.style.height = h + 'px';
-            item.style.left = '50px';
-            item.style.top = '150px';
-            
-            // Usamos imágenes reales de iconos para que se vea profesional
-            let imgSrc = "";
-            if(emoji === '🧱') imgSrc = "https://cdn-icons-png.flaticon.com/512/1004/1004759.png";
-            if(emoji === '🔲') imgSrc = "https://cdn-icons-png.flaticon.com/512/599/599665.png";
-            if(emoji === '🔥') imgSrc = "https://cdn-icons-png.flaticon.com/512/1113/1113204.png";
-            if(emoji === '🔪') imgSrc = "https://cdn-icons-png.flaticon.com/512/2852/2852237.png";
-            if(emoji === '🪑') imgSrc = "https://cdn-icons-png.flaticon.com/512/2413/2413192.png";
-            if(emoji === '🍽️') imgSrc = "https://cdn-icons-png.flaticon.com/512/2635/2635606.png";
-            if(emoji === '🛋️') imgSrc = "https://cdn-icons-png.flaticon.com/512/2603/2603737.png";
-            if(emoji === '🌿') imgSrc = "https://cdn-icons-png.flaticon.com/512/628/628283.png";
-            if(emoji === '🍕') imgSrc = "https://cdn-icons-png.flaticon.com/512/3595/3595455.png";
+            item.style.border = "2px solid white";
+            item.style.background = "rgba(255,255,255,0.1)";
+            item.style.fontSize = "12px";
+            item.style.color = "white";
+            item.innerHTML = `<div style="text-align:center">${type}<br>${label}</div>`;
 
-            item.innerHTML = `<img src="${imgSrc}">`;
+            // Posición inicial centrada en la vista
+            item.style.left = (window.scrollX + 200) + 'px';
+            item.style.top = (window.scrollY + 200) + 'px';
             
             canvas.appendChild(item);
             makeDraggable(item);
-            togglePanel(); // Cierra el panel al elegir
+            togglePanel();
         }
 
         function makeDraggable(el) {
-            let x = 0, y = 0;
+            let startX, startY, initialLeft, initialTop;
 
             el.addEventListener('touchstart', dragStart);
             el.addEventListener('mousedown', dragStart);
@@ -167,8 +190,11 @@
                 activeItem = el;
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                x = clientX - el.offsetLeft;
-                y = clientY - el.offsetTop;
+                
+                startX = clientX;
+                startY = clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
                 
                 document.addEventListener('touchmove', dragMove, {passive: false});
                 document.addEventListener('mousemove', dragMove);
@@ -182,9 +208,13 @@
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 
-                // Efecto Imán (Snap a 20px)
-                let newX = Math.round((clientX - x) / 20) * 20;
-                let newY = Math.round((clientY - y) / 20) * 20;
+                // Ajustar movimiento por la escala del zoom
+                let dx = (clientX - startX) / scale;
+                let dy = (clientY - startY) / scale;
+                
+                // Snap a 20px
+                let newX = Math.round((initialLeft + dx) / 20) * 20;
+                let newY = Math.round((initialTop + dy) / 20) * 20;
                 
                 el.style.left = newX + 'px';
                 el.style.top = newY + 'px';
@@ -195,14 +225,19 @@
                 document.removeEventListener('touchmove', dragMove);
                 document.removeEventListener('mousemove', dragMove);
             }
-            
-            // Borrar con doble click o doble toque
+
             el.addEventListener('dblclick', () => el.remove());
         }
 
-        function limpiar() {
-            if(confirm("¿Borrar todo el plano?")) canvas.innerHTML = "";
-        }
+        // Zoom con la rueda del mouse
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                e.deltaY < 0 ? zoomIn() : zoomOut();
+            }
+        }, {passive: false});
+
+        function limpiar() { if(confirm("¿Reiniciar el plano?")) canvas.innerHTML = ""; }
     </script>
 </body>
 </html>
